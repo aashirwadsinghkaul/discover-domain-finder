@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import os
 from pathlib import Path
 
 from .models import DomainResult
@@ -55,11 +56,14 @@ def write_results(path: str | Path, results: list[DomainResult]) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     ordered = sorted(results, key=lambda item: (-item.score, item.domain))
-    with destination.open("w", newline="", encoding="utf-8") as handle:
+    temporary = destination.with_name(f".{destination.name}.tmp")
+    with temporary.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=OUTPUT_FIELDS)
         writer.writeheader()
         for rank, result in enumerate(ordered, start=1):
             row = result.as_row()
             row["rank"] = rank
             writer.writerow(row)
-
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, destination)

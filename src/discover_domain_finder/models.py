@@ -9,6 +9,7 @@ class Capture:
     url: str
     status_code: str = "200"
     mime_type: str = "text/html"
+    digest: str = ""
 
     @property
     def year(self) -> int | None:
@@ -34,6 +35,7 @@ class DomainResult:
     domain: str
     score: int = 0
     verdict: str = "LOW"
+    data_status: str = "OK"
     captures: int = 0
     unique_urls: int = 0
     likely_articles: int = 0
@@ -55,6 +57,7 @@ class DomainResult:
             "domain": self.domain,
             "score": self.score,
             "verdict": self.verdict,
+            "data_status": self.data_status,
             "captures": self.captures,
             "unique_urls": self.unique_urls,
             "likely_articles": self.likely_articles,
@@ -71,4 +74,3 @@ class DomainResult:
             "error": self.error,
             "disclaimer": "Heuristic only; does not prove historical Google Discover traffic.",
         }
-

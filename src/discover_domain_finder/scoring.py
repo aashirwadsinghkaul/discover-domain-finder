@@ -27,6 +27,8 @@ def verdict_for(score: int) -> str:
 
 
 def analyze_domain(domain: str, captures: list[Capture]) -> DomainResult:
+    if not captures:
+        return DomainResult(domain=domain, verdict="NO_DATA", data_status="NO_DATA")
     unique: dict[str, tuple[object, set[int]]] = {}
     all_years: set[int] = set()
     for capture in captures:

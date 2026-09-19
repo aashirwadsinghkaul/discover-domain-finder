@@ -11,7 +11,9 @@ It accepts a plain text or CSV list, finds archived HTML URLs, and looks for sig
 - archive year coverage and consecutive-year continuity
 - common spam URL terms (adult, pharma, payday loan, crypto giveaway, and warez terms)
 
-The output is a ranked CSV with an explainable 0–100 score and one of four verdicts: `HIGH`, `GOOD`, `REVIEW`, or `LOW`.
+V2 checks both the apex host (`example.com`) and its `www` host, merges and deduplicates their history, and scans several domains concurrently. The ranked CSV is safely refreshed after every completed domain, so results appear while a long scan is still running.
+
+Content-backed results receive an explainable 0–100 score and `HIGH`, `GOOD`, `REVIEW`, or `LOW`. `NO_DATA` means Wayback returned no usable HTML history; `ERROR` means neither host could be queried successfully.
 
 > **Important:** This is a historical-content heuristic. A high score does **not** prove that a domain received traffic from Google Discover. Confirmed historical Discover performance requires legitimate access to that domain's Google Search Console property. Do not buy a domain from this score alone; also check trademarks, backlinks, penalties, current indexing, and archive snapshots manually.
 
@@ -28,7 +30,7 @@ Then open Terminal in this project folder and run these commands one at a time:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install .
+python3 -m pip install --upgrade .
 discover-domain-finder sample_domains.txt --output ranked_domains.csv
 ```
 
@@ -79,7 +81,8 @@ Invalid input rows are reported as warnings and skipped. Duplicate domains are c
 ```bash
 discover-domain-finder domains.txt \
   --output ranked_domains.csv \
-  --delay 1.5 \
+  --workers 4 \
+  --delay 0.25 \
   --timeout 30 \
   --retries 3 \
   --max-records 5000
@@ -89,7 +92,8 @@ discover-domain-finder domains.txt \
 | --- | --- |
 | `-o`, `--output` | Output CSV path |
 | `--column` | Domain column for CSV input |
-| `--delay` | Pause between domains; keep this polite to the free archive service |
+| `--workers` | Domains processed concurrently; default `4` |
+| `--delay` | Minimum spacing between Wayback request starts; default `0.25` seconds |
 | `--timeout` | Seconds before a request times out |
 | `--retries` | Retries for rate limits and temporary server/network errors |
 | `--max-records` | Maximum archive rows requested per domain |
@@ -105,6 +109,7 @@ discover-domain-finder --help
 The most useful columns are:
 
 - `score` and `verdict`: overall heuristic rank
+- `data_status`: `OK`, `PARTIAL`, `NO_DATA`, or `ERROR`
 - `likely_articles` and `article_ratio`: estimated publishing depth
 - `archive_years`, `first_year`, `last_year`, and `longest_year_streak`: history and continuity
 - `section_signal_urls` and `wordpress_urls`: publishing-platform evidence
@@ -120,19 +125,25 @@ The score intentionally combines several weak signals rather than treating any s
 | 55–74 | `GOOD` | Meaningful evidence; worth deeper review |
 | 35–54 | `REVIEW` | Mixed or limited evidence |
 | 0–34 | `LOW` | Thin evidence or substantial warning signals |
+| — | `NO_DATA` | Neither apex nor `www` returned usable HTML history |
+| — | `ERROR` | Both Wayback host queries failed |
+
+`PARTIAL` in `data_status` means one host was analyzed but the other host query failed. Its score is usable with extra caution. While scanning, each finished domain is printed immediately and `ranked_domains.csv` is re-ranked and atomically replaced. Spreadsheet apps do not always auto-refresh an already-open file, so reopen it to see the latest rows.
 
 ## Wayback limitations
 
 The Wayback Machine is a free external service. Coverage can be incomplete, the CDX API can be temporarily unavailable or rate-limited, and archived URLs can include old redirects or hacked content. The tool therefore:
 
 - requests only historical HTML records with successful status codes
+- queries both `domain.com` and `www.domain.com`, then merges their captures
 - collapses identical content while retaining changed captures across years
 - retries temporary failures with exponential backoff
-- waits between domains
+- uses a globally spaced request queue with parallel domain workers
 - deduplicates canonical page URLs
-- records per-domain failures in the CSV and continues
+- refreshes the ranked CSV after every completed domain
+- distinguishes missing data, partial data, and request errors
 
-For large lists, use a larger `--delay` and run in smaller batches.
+For large lists, start with the defaults. If Wayback returns HTTP 429 or temporary errors, reduce `--workers` to `2` and increase `--delay` to `0.5` or `1.0`.
 
 ## Development and tests
 
@@ -145,7 +156,7 @@ python3 -m pip install -e .
 python3 -m unittest discover -s tests -v
 ```
 
-The tests cover domain normalization, international domains, URL/content classification, canonical deduplication, scoring and verdict boundaries, text/CSV input, ranking output, malformed archive data, retries, HTTP errors, empty responses, and batch continuation after API errors.
+The tests cover domain normalization, international domains, URL/content classification, utility-page exclusions, apex/`www` merging, canonical deduplication, scoring and verdict boundaries, text/CSV input, atomic incremental ranking output, malformed archive data, partial host failures, retries, HTTP errors, empty responses, and batch continuation after API errors.
 
 ## Responsible use
 
@@ -154,4 +165,3 @@ Respect Internet Archive availability and terms, use conservative request rates,
 ## License
 
 MIT
-

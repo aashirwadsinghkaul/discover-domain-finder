@@ -17,7 +17,11 @@ class ClassificationTests(unittest.TestCase):
         self.assertTrue(signal.article_likely)
 
     def test_assets_and_taxonomy_are_not_articles(self):
-        for url in ("https://x.com/blog/image.jpg", "https://x.com/category/news/", "https://x.com/feed/"):
+        for url in (
+            "https://x.com/blog/image.jpg", "https://x.com/category/news/", "https://x.com/feed/",
+            "https://x.com/a-propos", "https://x.com/about-us", "https://x.com/contact",
+            "https://x.com/concept-art",
+        ):
             with self.subTest(url=url):
                 self.assertFalse(classify_url(url).article_likely)
 
@@ -32,4 +36,3 @@ class ClassificationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -28,6 +28,11 @@ NON_ARTICLE_EXTENSIONS = re.compile(
     re.I,
 )
 UTILITY_PATH = re.compile(r"/(?:tag|category|author|page|feed|search|login|cart|checkout)(?:/|$)", re.I)
+UTILITY_SLUGS = {
+    "about", "about-us", "a-propos", "contact", "contact-us", "faq",
+    "legal", "legal-notice", "mentions-legales", "privacy", "privacy-policy",
+    "terms", "terms-and-conditions", "conditions-generales", "sitemap",
+}
 
 
 def canonicalize_url(url: str) -> str:
@@ -60,7 +65,15 @@ def classify_url(url: str) -> URLSignals:
     wordpress = bool(WORDPRESS.search(target))
     spam = tuple(name for name, pattern in SPAM_PATTERNS.items() if pattern.search(target))
     segments = [part for part in parsed.path.split("/") if part]
-    slug_like = bool(segments and len(segments[-1]) >= 8 and re.search(r"[-_]", segments[-1]))
-    excluded = bool(NON_ARTICLE_EXTENSIONS.search(target) or UTILITY_PATH.search(parsed.path))
+    final_slug = segments[-1].lower() if segments else ""
+    slug_words = [word for word in re.split(r"[-_]", final_slug) if word]
+    # Three-word slugs are a useful weak article signal. Two-word service,
+    # portfolio and About pages caused too many false positives in V1.
+    slug_like = len(slug_words) >= 3 and len(final_slug) >= 12
+    excluded = bool(
+        NON_ARTICLE_EXTENSIONS.search(target)
+        or UTILITY_PATH.search(parsed.path)
+        or final_slug in UTILITY_SLUGS
+    )
     article_likely = not excluded and bool(sections or date_pattern or slug_like or re.search(r"[?&]p=\d+", target))
     return URLSignals(normalized, article_likely, sections, date_pattern, wordpress, spam)

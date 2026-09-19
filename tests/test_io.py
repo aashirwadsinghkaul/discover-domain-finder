@@ -41,8 +41,8 @@ class InputOutputTests(unittest.TestCase):
         self.assertEqual([row["domain"] for row in rows], ["high.com", "low.com"])
         self.assertEqual(rows[0]["rank"], "1")
         self.assertIn("does not prove", rows[0]["disclaimer"])
+        self.assertFalse((path.parent / f".{path.name}.tmp").exists())
 
 
 if __name__ == "__main__":
     unittest.main()
-

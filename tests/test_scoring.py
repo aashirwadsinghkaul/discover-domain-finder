@@ -34,7 +34,7 @@ class ScoringTests(unittest.TestCase):
         spam = [Capture("20200101000000", f"https://x.com/news/casino-poker-viagra-{i}") for i in range(20)]
         self.assertGreater(analyze_domain("x.com", clean).score, analyze_domain("x.com", spam).score)
         empty = analyze_domain("empty.com", [])
-        self.assertEqual((empty.score, empty.verdict), (0, "LOW"))
+        self.assertEqual((empty.score, empty.verdict, empty.data_status), (0, "NO_DATA", "NO_DATA"))
 
     def test_verdict_boundaries(self):
         self.assertEqual([verdict_for(x) for x in (0, 34, 35, 54, 55, 74, 75, 100)],
