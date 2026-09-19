@@ -1,0 +1,9 @@
+[
+  ["timestamp", "original", "statuscode", "mimetype", "digest"],
+  ["20180102120000", "https://example.com/blog/2018/01/first-story", "200", "text/html", "A"],
+  ["20190610120000", "https://example.com/news/2019/06/second-story", "200", "text/html", "B"],
+  ["20200715120000", "https://example.com/guides/useful-long-guide", "200", "text/html", "C"],
+  ["20210820120000", "https://example.com/wp-content/themes/site/style.css", "200", "text/html", "D"],
+  ["20220925120000", "https://example.com/insights/market-update-2022", "200", "text/html", "E"]
+]
+

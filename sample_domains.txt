@@ -1,0 +1,5 @@
+# One domain per line. URLs are also accepted and normalized.
+example.com
+wordpress.org
+https://www.python.org/blogs/
+
